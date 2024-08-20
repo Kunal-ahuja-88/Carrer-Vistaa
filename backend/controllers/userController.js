@@ -3,6 +3,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/userSchema.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import { sendToken } from "../utils/jwtToken.js";
 
 export const register = asyncHandler(async (req, res, next) => {
     console.log("Received request to register a new user");
@@ -65,38 +66,39 @@ export const register = asyncHandler(async (req, res, next) => {
       }
   
       const resume = await uploadOnCloudinary(resumePath)
+
+      console.log("Checking resume",resume)
+      console.log("Checking resumePath",resumePath)
   
       if(!resume) {
           throw new ApiError(400, "Resume file is not uploaded")
       }
   
       userData.resume = {
-          public_id: resumePath.public_id,
-          url: resumePath.url,
+          public_id: resume.public_id,
+          url: resume.url,
         };
+
+console.log("Resume public_id:", resume.public_id);
+console.log("Resume URL:", resume.url);
   
   
 
     // Create the user in the database
     try {
         const user = await User.create(userData);
-        console.log("User successfully created:", user);
-
-        const createdUser = await User.findById(user._id).select("-password");
-        console.log("Created user (excluding password):", createdUser);
-
-        if (!createdUser) {
-            console.log("Failed to retrieve the created user");
-            throw new ApiError(500, "Something went wrong while registering the user");
-        }
-
-        return res.status(201).json(
-            new ApiResponse(200, createdUser, "User registered successfully")
-        );
+        
+        sendToken(user, 201, res, "User registered successfully");
+        
     } catch (error) {
         console.error("Error during user creation:", error);
-        throw new ApiError(500, "Failed to register user");
+       
+        if (!res.headersSent) {
+            throw new ApiError(500, "Failed to register user");
+        }
     }
+
+
 });
 
 

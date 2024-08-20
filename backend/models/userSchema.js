@@ -38,8 +38,14 @@ const userSchema = new mongoose.Schema({
         select: false,
     },
     resume: {
-        public_id: String,
-        url: String,
+        public_id: {
+            type: String,
+            required: true
+        },
+        url: {
+            type: String,
+            required: true
+        }
     },
     coverLetter: {
         type: String
@@ -54,5 +60,22 @@ const userSchema = new mongoose.Schema({
         default: Date.now
     },
 });
+
+userSchema.pre("save",async function (next) {
+    if(!this.isModified("password")) return next();
+
+    this.password=await bcrypt.hash(this.password,10);
+})
+
+userSchema.methods.isPasswordCorrect = async function(password) {
+    return await bcrypt.compare(password,this.password)
+
+}
+
+userSchema.methods.getJWTToken = function () {
+    return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
+      expiresIn: process.env.JWT_EXPIRE,
+    });
+  };
 
 export const User = mongoose.model("User", userSchema);
