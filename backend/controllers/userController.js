@@ -101,6 +101,34 @@ console.log("Resume URL:", resume.url);
 
 });
 
+export const login = asyncHandler(async(req,res,next) => {
+  const {role , email , password} = req.body;
+
+  if(!role || !email || !password) {
+    throw new ApiError(400,"Role , email and password are required")
+  }
+
+  const user = await User.findOne({ email }).select("+password");
+
+  if (!user) {
+    throw new ApiError(404, "User does not exist")
+}
+
+const isPasswordValid = await user.isPasswordCorrect(password) 
+
+
+if(!isPasswordValid) {
+    throw new ApiError(401, "Invalid password")
+} 
+
+if(user.role!==role) {
+    throw new ApiError(400,"Invalid user code")
+}
+
+sendToken(user, 200, res, "User logged in successfully.");
+
+})
+
 
 
 

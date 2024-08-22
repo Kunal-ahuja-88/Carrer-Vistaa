@@ -1,7 +1,6 @@
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
-import fileUpload from "express-fileupload";
 import userRouter from "./routes/userRouter.js"
 
 const app = express();
